@@ -19,14 +19,15 @@ import com.alibaba.com.caucho.hessian.io.SerializerFactory;
 
 public class Hessian2SerializerFactory extends SerializerFactory {
 
-	public static final SerializerFactory SERIALIZER_FACTORY = new Hessian2SerializerFactory();
+    public static final SerializerFactory SERIALIZER_FACTORY = new Hessian2SerializerFactory();
 
-	private Hessian2SerializerFactory() {
-	}
+    private Hessian2SerializerFactory() {
+		setAllowNonSerializable(true);
+    }
 
-	@Override
-	public ClassLoader getClassLoader() {
-		return Thread.currentThread().getContextClassLoader();
-	}
+    @Override
+    public ClassLoader getClassLoader() {
+        return Thread.currentThread().getContextClassLoader();
+    }
 
 }
