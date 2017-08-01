@@ -15,22 +15,16 @@
  */
 package com.alibaba.dubbo.rpc.filter;
 
-import java.lang.reflect.Method;
-
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.common.logger.Logger;
 import com.alibaba.dubbo.common.logger.LoggerFactory;
 import com.alibaba.dubbo.common.utils.ReflectUtils;
 import com.alibaba.dubbo.common.utils.StringUtils;
-import com.alibaba.dubbo.rpc.Filter;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.RpcException;
-import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.service.GenericService;
+
+import java.lang.reflect.Method;
 
 /**
  * ExceptionInvokerFilter
@@ -96,7 +90,7 @@ public class ExceptionFilter implements Filter {
                     }
                     // 是JDK自带的异常，直接抛出
                     String className = exception.getClass().getName();
-                    if (className.startsWith("java.") || className.startsWith("javax.")) {
+                    if (className.startsWith("java.") || className.startsWith("javax.") || className.startsWith("com.tiangou.")) {
                         return result;
                     }
                     // 是Dubbo本身的异常，直接抛出

@@ -15,6 +15,14 @@
  */
 package com.alibaba.dubbo.container.jetty;
 
+import com.alibaba.dubbo.common.logger.Logger;
+import com.alibaba.dubbo.common.logger.LoggerFactory;
+import com.alibaba.dubbo.common.utils.ConfigUtils;
+import com.alibaba.dubbo.common.utils.NetUtils;
+import com.alibaba.dubbo.common.utils.StringUtils;
+import com.alibaba.dubbo.container.Container;
+import com.alibaba.dubbo.container.page.PageServlet;
+import com.alibaba.dubbo.container.page.ResourceFilter;
 import org.mortbay.jetty.Handler;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.nio.SelectChannelConnector;
@@ -22,13 +30,10 @@ import org.mortbay.jetty.servlet.FilterHolder;
 import org.mortbay.jetty.servlet.ServletHandler;
 import org.mortbay.jetty.servlet.ServletHolder;
 
-import com.alibaba.dubbo.common.logger.Logger;
-import com.alibaba.dubbo.common.logger.LoggerFactory;
-import com.alibaba.dubbo.common.utils.ConfigUtils;
-import com.alibaba.dubbo.common.utils.NetUtils;
-import com.alibaba.dubbo.container.Container;
-import com.alibaba.dubbo.container.page.PageServlet;
-import com.alibaba.dubbo.container.page.ResourceFilter;
+import java.net.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * JettyContainer. (SPI, Singleton, ThreadSafe)
@@ -47,6 +52,8 @@ public class JettyContainer implements Container {
 
     public static final int DEFAULT_JETTY_PORT = 8080;
 
+    public static final String LOCAL_NET_ONLY = "dubbo.jetty.local.only";
+
     SelectChannelConnector connector;
 
     public void start() {
@@ -57,7 +64,20 @@ public class JettyContainer implements Container {
         } else {
             port = Integer.parseInt(serverPort);
         }
+
+        String localhost = null;
+        if (StringUtils.isNotEmpty(ConfigUtils.getProperty(LOCAL_NET_ONLY))) {
+            try {
+                localhost = getLocalAddress().getHostAddress();
+            } catch (Exception e) {
+                logger.error("", e);
+            }
+        }
+
         connector = new SelectChannelConnector();
+        if (StringUtils.isNotEmpty(localhost)) {
+            connector.setHost(localhost);
+        }
         connector.setPort(port);
         ServletHandler handler = new ServletHandler();
         
@@ -92,4 +112,40 @@ public class JettyContainer implements Container {
         }
     }
 
+    public InetAddress getLocalAddress() throws SocketException, UnknownHostException {
+        Enumeration<NetworkInterface> enumeration = NetworkInterface.getNetworkInterfaces();
+        List<InetAddress> ipv4Result = new ArrayList<InetAddress>();
+        ArrayList<InetAddress> ipv6Result = new ArrayList<InetAddress>();
+
+        while (enumeration.hasMoreElements()) {
+            final NetworkInterface networkInterface = enumeration.nextElement();
+            final Enumeration<InetAddress> en = networkInterface.getInetAddresses();
+            while (en.hasMoreElements()) {
+                final InetAddress address = en.nextElement();
+                if (!address.isLoopbackAddress()) {
+                    if (address instanceof Inet6Address) {
+                        ipv6Result.add(address);
+                    } else {
+                        ipv4Result.add(address);
+                    }
+                }
+            }
+        }
+
+        // prefer ipv4
+        if (!ipv4Result.isEmpty()) {
+            for (InetAddress ip : ipv4Result) {
+                if (ip.getHostAddress().startsWith("10.")) {
+                    return ip;
+                }
+            }
+
+            return ipv4Result.get(ipv4Result.size() - 1);
+        } else if (!ipv6Result.isEmpty()) {
+            return ipv6Result.get(0);
+        }
+
+        //If failed to find,fall back to localhost
+        return InetAddress.getLocalHost();
+    }
 }
