@@ -138,7 +138,7 @@ public class Constants {
 
     public static final int     DEFAULT_REGISTRY_CONNECT_TIMEOUT   = 5000;
 
-    public static final int     DEFAULT_RETRIES                    = 2;
+    public static final int     DEFAULT_RETRIES                    = 0;
 
     // default buffer size is 8k.
     public static final int     DEFAULT_BUFFER_SIZE                = 8 * 1024;
